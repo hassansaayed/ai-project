@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Spam Classifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        success: '#10B981',
+                        danger: '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🤖 AI Spam Classifier</h1>
+            <p class="text-gray-600 text-lg">Analyze text to detect spam or legitimate messages</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-2xl mx-auto">
+            <!-- Input Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Enter Text to Analyze</h2>
+                <div class="space-y-4">
+                    <!-- Algorithm Selection -->
+                    <div>
+                        <label for="algorithmSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Algorithm:
+                        </label>
+                        <select 
+                            id="algorithmSelect"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                            <option value="rule_based">🔧 Rule-based Classifier</option>
+                            <option value="naive_bayes">📊 Naive Bayes (scikit-learn)</option>
+                            <option value="logistic_regression">📈 Logistic Regression (scikit-learn)</option>
+                            <option value="svm">⚡ SVM (scikit-learn)</option>
+                            <option value="random_forest">🌲 Random Forest (scikit-learn)</option>
+                        </select>
+                    </div>
+                    
+                    <textarea 
+                        id="textInput" 
+                        placeholder="Enter the text you want to classify as spam or legitimate..."
+                        class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    ></textarea>
+                    <button 
+                        id="classifyBtn"
+                        class="w-full bg-primary hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center"
+                    >
+                        <span id="btnText">🔍 Classify Text</span>
+                        <div id="loadingSpinner" class="hidden ml-2">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Classification Results</h2>
+                
+                <!-- Result Card -->
+                <div id="resultCard" class="rounded-lg p-4 mb-4">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+
+                <!-- Confidence Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Confidence Level</span>
+                        <span id="confidenceText">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="confidenceBar" class="h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Spam Score -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Spam Score</span>
+                        <span id="spamScoreText">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="spamScoreBar" class="h-3 rounded-full transition-all duration-500 bg-yellow-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Reasons -->
+                <div id="reasonsSection" class="mb-4 hidden">
+                    <h3 class="font-semibold text-gray-800 mb-2">Detection Reasons:</h3>
+                    <div id="reasonsList" class="space-y-1">
+                        <!-- Reasons will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Original Text -->
+                <div class="mt-6">
+                    <h3 class="font-semibold text-gray-800 mb-2">Original Text:</h3>
+                    <div id="originalText" class="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Examples Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Try These Examples</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <h3 class="font-medium text-gray-700">Spam Examples:</h3>
+                        <div class="space-y-2">
+                            <button class="example-btn text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg text-sm text-red-700 transition duration-200" data-text="URGENT! You have won a free iPhone! Click here to claim now!">
+                                🚨 URGENT! You have won a free iPhone!
+                            </button>
+                            <button class="example-btn text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg text-sm text-red-700 transition duration-200" data-text="CONGRATULATIONS! You've been selected for a $1000 gift card!">
+                                🎉 CONGRATULATIONS! You've been selected for a $1000 gift card!
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="font-medium text-gray-700">Legitimate Examples:</h3>
+                        <div class="space-y-2">
+                            <button class="example-btn text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-700 transition duration-200" data-text="Hi, how are you doing? Let's meet for coffee tomorrow.">
+                                ☕ Hi, how are you doing? Let's meet for coffee tomorrow.
+                            </button>
+                            <button class="example-btn text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-700 transition duration-200" data-text="The meeting is scheduled for 3 PM today. Please bring the reports.">
+                                📅 The meeting is scheduled for 3 PM today.
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const textInput = document.getElementById('textInput');
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const classifyBtn = document.getElementById('classifyBtn');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultCard = document.getElementById('resultCard');
+        const confidenceText = document.getElementById('confidenceText');
+        const confidenceBar = document.getElementById('confidenceBar');
+        const spamScoreText = document.getElementById('spamScoreText');
+        const spamScoreBar = document.getElementById('spamScoreBar');
+        const reasonsSection = document.getElementById('reasonsSection');
+        const reasonsList = document.getElementById('reasonsList');
+        const originalText = document.getElementById('originalText');
+
+        // Example buttons
+        const exampleBtns = document.querySelectorAll('.example-btn');
+
+        // Classify text function
+        async function classifyText(text) {
+            try {
+                // Show loading state
+                btnText.textContent = 'Analyzing...';
+                loadingSpinner.classList.remove('hidden');
+                classifyBtn.disabled = true;
+
+                const response = await fetch('/classify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        text: text,
+                        algorithm: algorithmSelect.value
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    throw new Error(result.error || 'Classification failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                // Reset button state
+                btnText.textContent = '🔍 Classify Text';
+                loadingSpinner.classList.add('hidden');
+                classifyBtn.disabled = false;
+            }
+        }
+
+        // Display results
+        function displayResults(result) {
+            const isSpam = result.prediction === 'spam';
+            const confidence = result.confidence;
+            const spamScore = result.spam_score || 0;
+            const reasons = result.reasons || [];
+            const algorithm = result.algorithm || 'unknown';
+            
+            // Get algorithm display name
+            const algorithmNames = {
+                'rule_based': 'Rule-based Classifier',
+                'naive_bayes': 'Naive Bayes (scikit-learn)',
+                'logistic_regression': 'Logistic Regression (scikit-learn)',
+                'svm': 'SVM (scikit-learn)',
+                'random_forest': 'Random Forest (scikit-learn)'
+            };
+            const algorithmName = algorithmNames[algorithm] || 'Unknown Algorithm';
+
+            // Set result card content
+            resultCard.className = `rounded-lg p-4 mb-4 ${isSpam ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`;
+            
+            resultCard.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${isSpam ? 'bg-red-100' : 'bg-green-100'}">
+                            <span class="text-lg">${isSpam ? '🚨' : '✅'}</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-semibold ${isSpam ? 'text-red-800' : 'text-green-800'}">
+                            ${isSpam ? 'SPAM DETECTED' : 'LEGITIMATE MESSAGE'}
+                        </h3>
+                        <p class="text-sm ${isSpam ? 'text-red-600' : 'text-green-600'}">
+                            This message appears to be ${isSpam ? 'spam' : 'legitimate'} with ${confidence}% confidence.
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Algorithm: ${algorithmName}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            // Update confidence bar
+            confidenceText.textContent = `${confidence}%`;
+            confidenceBar.style.width = `${confidence}%`;
+            confidenceBar.className = `h-3 rounded-full transition-all duration-500 ${isSpam ? 'bg-red-500' : 'bg-green-500'}`;
+
+            // Update spam score
+            spamScoreText.textContent = spamScore;
+            const maxScore = 20; // Maximum expected score
+            const scorePercentage = Math.min((spamScore / maxScore) * 100, 100);
+            spamScoreBar.style.width = `${scorePercentage}%`;
+            spamScoreBar.className = `h-3 rounded-full transition-all duration-500 ${spamScore > 8 ? 'bg-red-500' : spamScore > 4 ? 'bg-yellow-500' : 'bg-green-500'}`;
+
+            // Show reasons if available
+            if (reasons.length > 0) {
+                reasonsList.innerHTML = reasons.map(reason => 
+                    `<div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">• ${reason}</div>`
+                ).join('');
+                reasonsSection.classList.remove('hidden');
+            } else {
+                reasonsSection.classList.add('hidden');
+            }
+
+            // Show original text
+            originalText.textContent = result.text;
+
+            // Show results section
+            resultsSection.classList.remove('hidden');
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Event listeners
+        classifyBtn.addEventListener('click', () => {
+            const text = textInput.value.trim();
+            if (text) {
+                classifyText(text);
+            } else {
+                alert('Please enter some text to classify.');
+            }
+        });
+
+        // Example button clicks
+        exampleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.getAttribute('data-text');
+                textInput.value = text;
+                classifyText(text);
+            });
+        });
+
+        // Enter key to classify
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                const text = textInput.value.trim();
+                if (text) {
+                    classifyText(text);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
